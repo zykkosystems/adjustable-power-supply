@@ -106,15 +106,20 @@ void setup() {
     
     digitalWrite(_2675_ENABLE, HIGH);
 
-    // 5V
-    writeDac(0, 1, 2347);
-    writeDac(1, 1, 1705);
+    // 6V
+    writeDac(0, 1, 1910);
+    writeDac(1, 1, 2159);
 }
 
 void loop() {
-    digitalWrite(SHUTDOWN_LED, HIGH);
-    delay(1000);
-    digitalWrite(SHUTDOWN_LED, LOW);
+    int ch0 = readAdc(0);
+    int ch1 = readAdc(1);
+
+    lcd.clear();
+    lcd.home();
+    lcd.print(ch0);
+    lcd.setCursor(0, 1);
+    lcd.print(ch1);
     delay(1000);
 }
 
