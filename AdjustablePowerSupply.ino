@@ -10,7 +10,7 @@
 // Chip Select Pins
 const int CSADC = 9;
 const int CSDAC = 10;
-const int _2675_ENABLE = 7;
+const int ENABLE2675 = 7;
 
 // I2C LCD pins
 #define I2C_ADDR    0x27
@@ -32,10 +32,10 @@ void setPinModes()
 {
     pinMode(CSADC, OUTPUT);
     pinMode(CSDAC, OUTPUT);
-    pinMode(_2675_ENABLE, OUTPUT);
+    pinMode(ENABLE2675, OUTPUT);
     digitalWrite(CSADC, HIGH);
     digitalWrite(CSDAC, HIGH);
-    digitalWrite(_2675_ENABLE, LOW);
+    digitalWrite(ENABLE2675, LOW);
 
     pinMode(SHUTDOWN_LED, OUTPUT);
     pinMode(CURLIM_LED, OUTPUT);
@@ -59,6 +59,10 @@ void initSPI()
     SPI.begin();
 }
 
+/*
+ * channel - 0, 1, 2 or 3
+ * returns: int value 0 up to & including 4095
+ */
 int readAdc(int channel)
 {
     byte b0 = 0;
@@ -80,6 +84,9 @@ int readAdc(int channel)
     return output & 4095;
 }
 
+/*
+ * channel - 0 or 1; gainEnable - 1 to enable x2 gain; value - 0 up to & including 4095
+ */
 void writeDac(int channel, boolean gainEnable, int value)
 {
     byte b = 0;
@@ -94,7 +101,8 @@ void writeDac(int channel, boolean gainEnable, int value)
     digitalWrite(CSDAC, HIGH);
 }
 
-void setup() {
+void setup() 
+{
     setPinModes();
     initSPI();
     initLCD();
@@ -104,14 +112,15 @@ void setup() {
     lcd.print("Hello world");
 
     
-    digitalWrite(_2675_ENABLE, HIGH);
+    digitalWrite(ENABLE2675, HIGH);
 
     // 6V
     writeDac(0, 1, 1910);
     writeDac(1, 1, 2159);
 }
 
-void loop() {
+void loop() 
+{
     int ch0 = readAdc(0);
     int ch1 = readAdc(1);
 
