@@ -101,6 +101,26 @@ void writeDac(int channel, boolean gainEnable, int value)
     digitalWrite(CSDAC, HIGH);
 }
 
+/*
+ * Generates the required input value for the 2675 reg in order to produce the desired target output
+ * targetmV - 1250 up to & including 10 000
+ * returns: int value 0 up to & including 4095
+ */
+int generateChannel0Output(int targetmV)
+{
+    return 5421 - (348/797 * (targetmV + 2040));
+}
+
+/*
+ * Generates the required input value for the 317 reg in order to produce the desired target output
+ * targetmV - 1250 up to & including 10 000
+ * returns: int value 0 up to & including 4095
+ */
+int generateChannel1Output(int targetmV)
+{
+    return 10 * ((targetmV - 1249) / 22);
+}
+
 void setup() 
 {
     setPinModes();
