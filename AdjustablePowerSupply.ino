@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
+#include <TimerOne.h>
 
 // Chip Select Pins
 const int CSADC = 9;
@@ -28,6 +29,10 @@ LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin)
 const int SHUTDOWN_LED = 3;
 const int CURLIM_LED = 4;
 
+const int OUTRESET_BTN = 2;
+
+volatile int targetMillivolts = 1250;
+
 void setPinModes()
 {
     pinMode(CSADC, OUTPUT);
@@ -41,6 +46,8 @@ void setPinModes()
     pinMode(CURLIM_LED, OUTPUT);
     digitalWrite(SHUTDOWN_LED, HIGH);
     digitalWrite(CURLIM_LED, LOW);
+
+    pinMode(OUTRESET_BTN, INPUT_PULLUP);
 }
 
 void initLCD()
@@ -57,6 +64,36 @@ void initSPI()
     SPI.setBitOrder(MSBFIRST);  // Most significant bit arrives first
     SPI.setDataMode(SPI_MODE0);    // SPI 0,0 as per MCP4821/2 data sheet
     SPI.begin();
+}
+
+void initTimerOne()
+{
+    Timer1.initialize(5000);
+    Timer1.attachInterrupt(resetButtonISR);
+}
+
+
+boolean outputEnabled = 0;
+void enableOutput()
+{
+    outputEnabled = 1;
+  
+    digitalWrite(ENABLE2675, HIGH);
+    digitalWrite(SHUTDOWN_LED, LOW);
+
+    writeDac(0, 1, generateChannel0Output(targetMillivolts));
+    writeDac(1, 1, generateChannel1Output(targetMillivolts));
+}
+
+void disableOutput()
+{
+    outputEnabled = 0;
+  
+    digitalWrite(ENABLE2675, LOW);
+    digitalWrite(SHUTDOWN_LED, HIGH);
+
+    writeDac(0, 1, generateChannel0Output(4000));
+    writeDac(1, 1, generateChannel1Output(1250));
 }
 
 /*
@@ -121,22 +158,47 @@ int generateChannel1Output(int targetmV)
     return 10 * ((targetmV - 1249) / 22);
 }
 
+volatile int resetButtonDepressedCount = 0;
+/*
+ * Interrupt Service Routine for the front-panel output enable toggle button
+ */
+void resetButtonISR()
+{
+    if (!digitalRead(OUTRESET_BTN))
+    {
+        resetButtonDepressedCount += 1;
+    }
+    else if (resetButtonDepressedCount > 0)
+    {
+        // Software debounce
+        if (resetButtonDepressedCount > 10)
+        {
+            if (outputEnabled)
+            {
+                disableOutput();
+            }
+            else 
+            {
+                enableOutput();
+            }
+        }
+        
+        resetButtonDepressedCount = 0;
+    }
+}
+
 void setup() 
 {
     setPinModes();
     initSPI();
     initLCD();
+    initTimerOne();
 
     lcd.clear();
     lcd.home();
     lcd.print("Hello world");
 
-    
-    digitalWrite(ENABLE2675, HIGH);
-
-    // 6V
-    writeDac(0, 1, 1910);
-    writeDac(1, 1, 2159);
+    targetMillivolts = 5000;
 }
 
 void loop() 
