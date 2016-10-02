@@ -1,4 +1,5 @@
-/* Adjustable Power Supply
+/* 
+ * Adjustable Power Supply
  * Luke Ashford 2016
  */
 
@@ -152,8 +153,8 @@ void writeDac(int channel, boolean gainEnable, int value)
  */
 int generateChannel0Output(int targetmV)
 {
-    // return 5421 - (3480/797 * (targetmV + 2040))/10;
-    return 4980 - ((4*(targetmV / 10))+816);
+    float mv = (float)targetmV;
+    return (int)(5421.0 - (348.0/797.0 * (mv + 2040.0)));
 }
 
 /*
@@ -163,7 +164,8 @@ int generateChannel0Output(int targetmV)
  */
 int generateChannel1Output(int targetmV)
 {
-    return 10 * ((targetmV - 1249) / 22);
+    float mv = (float)targetmV;
+    return (int)(10.0 * ((mv - 1249.0) / 22.0));
 }
 
 /*
