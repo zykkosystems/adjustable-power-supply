@@ -99,7 +99,7 @@ void disableOutput()
     digitalWrite(ENABLE2675, LOW);
     digitalWrite(SHUTDOWN_LED, HIGH);
 
-    writeDac(0, 1, generateChannel0Output(4000));
+    writeDac(0, 1, generateChannel0Output(1250));
     writeDac(1, 1, generateChannel1Output(1250));
 }
 
@@ -152,7 +152,8 @@ void writeDac(int channel, boolean gainEnable, int value)
  */
 int generateChannel0Output(int targetmV)
 {
-    return 5421 - (348/797 * (targetmV + 2040));
+    // return 5421 - (3480/797 * (targetmV + 2040))/10;
+    return 4980 - ((4*(targetmV / 10))+816);
 }
 
 /*
@@ -256,9 +257,13 @@ void loop()
 
     lcd.clear();
     lcd.home();
-    lcd.print(ch0);
+    lcd.print(targetMillivolts);
+    lcd.print("   ");
+    lcd.print(generateChannel0Output(targetMillivolts));
     lcd.setCursor(0, 1);
     lcd.print(ch1);
+    lcd.print("   ");
+    lcd.print(generateChannel1Output(targetMillivolts));
 
     if (outputEnabled)
     {
