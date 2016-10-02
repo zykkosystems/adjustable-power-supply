@@ -10,13 +10,13 @@
 #include <TimerOne.h>
 
 // Chip Select Pins
-const int CSADC = 9;
-const int CSDAC = 10;
-const int ENABLE2675 = 7;
+#define CSADC 9
+#define CSDAC 10
+#define ENABLE2675 7
 
 // Rotary Encoders
-const int VSETA = A0;
-const int VSETB = A1;
+#define VSETA A0
+#define VSETB A1
 
 // I2C LCD pins
 #define I2C_ADDR    0x27
@@ -31,10 +31,10 @@ const int VSETB = A1;
 LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 
 // LEDs
-const int SHUTDOWN_LED = 3;
-const int CURLIM_LED = 4;
+#define SHUTDOWN_LED 3
+#define CURLIM_LED 4
 
-const int OUTRESET_BTN = 2;
+#define OUTRESET_BTN 2
 
 volatile int targetMillivolts = 5000;
 
