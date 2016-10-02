@@ -13,6 +13,10 @@ const int CSADC = 9;
 const int CSDAC = 10;
 const int ENABLE2675 = 7;
 
+// Rotary Encoders
+const int VSETA = A0;
+const int VSETB = A1;
+
 // I2C LCD pins
 #define I2C_ADDR    0x27
 #define BACKLIGHT_PIN     3
@@ -31,7 +35,7 @@ const int CURLIM_LED = 4;
 
 const int OUTRESET_BTN = 2;
 
-volatile int targetMillivolts = 1250;
+volatile int targetMillivolts = 5000;
 
 void setPinModes()
 {
@@ -41,6 +45,9 @@ void setPinModes()
     digitalWrite(CSADC, HIGH);
     digitalWrite(CSDAC, HIGH);
     digitalWrite(ENABLE2675, LOW);
+
+    pinMode(VSETA, INPUT);
+    pinMode(VSETB, INPUT);
 
     pinMode(SHUTDOWN_LED, OUTPUT);
     pinMode(CURLIM_LED, OUTPUT);
@@ -69,7 +76,7 @@ void initSPI()
 void initTimerOne()
 {
     Timer1.initialize(5000);
-    Timer1.attachInterrupt(resetButtonISR);
+    Timer1.attachInterrupt(inputISR);
 }
 
 
@@ -158,10 +165,19 @@ int generateChannel1Output(int targetmV)
     return 10 * ((targetmV - 1249) / 22);
 }
 
-volatile int resetButtonDepressedCount = 0;
+/*
+ * ISR handler for the output enable toggle and rotary encoders
+ */
+void inputISR()
+{
+    resetButtonISR();
+    vSetEncISR();
+}
+
 /*
  * Interrupt Service Routine for the front-panel output enable toggle button
  */
+volatile int resetButtonDepressedCount = 0;
 void resetButtonISR()
 {
     if (!digitalRead(OUTRESET_BTN))
@@ -187,6 +203,40 @@ void resetButtonISR()
     }
 }
 
+/*
+ * Interrupt Service Routine for the voltage-set rotary encoder
+ */
+int VSETA_last = HIGH;
+int Vcount = targetMillivolts/100;
+void vSetEncISR()
+{
+    int A = digitalRead(VSETA);
+    // L->H on A
+    if ((VSETA_last == LOW) && (A == HIGH))
+    {
+        if (digitalRead(VSETB) == LOW)
+        {
+            Vcount += 1;
+            if (Vcount > 100)
+            {
+                Vcount = 100;
+            }
+        }
+        else
+        {
+            Vcount -= 1;
+            if (Vcount < 13)
+            {
+                Vcount = 13;
+            }
+        }
+
+        targetMillivolts = Vcount*100;
+    }
+
+    VSETA_last = A;
+}
+
 void setup() 
 {
     setPinModes();
@@ -197,8 +247,6 @@ void setup()
     lcd.clear();
     lcd.home();
     lcd.print("Hello world");
-
-    targetMillivolts = 5000;
 }
 
 void loop() 
@@ -211,6 +259,13 @@ void loop()
     lcd.print(ch0);
     lcd.setCursor(0, 1);
     lcd.print(ch1);
+
+    if (outputEnabled)
+    {
+        writeDac(0, 1, generateChannel0Output(targetMillivolts));
+        writeDac(1, 1, generateChannel1Output(targetMillivolts));
+    }
+    
     delay(1000);
 }
 
