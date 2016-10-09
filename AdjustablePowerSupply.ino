@@ -171,10 +171,16 @@ int generateChannel1Output(int targetmV)
 /*
  * ISR handler for the output enable toggle and rotary encoders
  */
+volatile byte LCDWriteTimer = 0;
+volatile boolean needToWriteLCD = 0;
 void inputISR()
 {
     resetButtonISR();
     vSetEncISR();
+    if (LCDWriteTimer++ == 0 && !needToWriteLCD)
+    {
+        needToWriteLCD = 1;
+    }
 }
 
 /*
@@ -244,22 +250,23 @@ void updateLCD()
 {
     int ch0 = readAdc(0);
     int ch1 = readAdc(1);
+    float c1 = ch1;
+    c1 /= 0.376564;
+    c1 += 0.5;
+    int mvToWrite = targetMillivolts + (targetMillivolts - (int)c1);
 
     lcd.clear();
     lcd.home();
     lcd.print(targetMillivolts/100);
     lcd.print(" ");
-    lcd.print(generateChannel0Output(targetMillivolts));
+    lcd.print(mvToWrite);
     lcd.print(" ");
-    lcd.print(generateChannel1Output(targetMillivolts));
+    lcd.print(generateChannel1Output(mvToWrite));
     lcd.setCursor(0, 1);
     lcd.print(ch0);
     lcd.print(" ");
     lcd.print(ch1);
     lcd.print(" ");
-    float c1 = ch1;
-    c1 /= 0.376564;
-    c1 += 0.5;
     lcd.print((int)c1);
 }
 
@@ -279,12 +286,19 @@ void loop()
 {
     if (outputEnabled)
     {
-        writeDac(0, 1, generateChannel0Output(targetMillivolts));
-        writeDac(1, 1, generateChannel1Output(targetMillivolts));
+        float c1 = (float)readAdc(1);
+        c1 /= 0.376564;
+        c1 += 0.5;
+        int mvToWrite = targetMillivolts + (targetMillivolts - (int)c1);
+      
+        writeDac(0, 1, generateChannel0Output(mvToWrite));
+        writeDac(1, 1, generateChannel1Output(mvToWrite));
     }
 
-    updateLCD();
-    
-    delay(500);
+    if (needToWriteLCD)
+    {
+        updateLCD();
+        needToWriteLCD = 0;
+    }
 }
 
